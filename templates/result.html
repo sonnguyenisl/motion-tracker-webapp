@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Result — Aximove{% endblock %}
+
+{% block head %}
+<style>
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .chev { transition: transform .2s ease; }
+  details[open] .chev { transform: rotate(180deg); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-4 py-12 space-y-8">
+
+  <div class="text-center">
+    <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">
+      {% if leaderboard_view %}Leaderboard{% else %}Feedback{% endif %}
+    </p>
+    <h1 class="text-4xl font-extrabold uppercase tracking-wide">Movement Report</h1>
+    {% if leaderboard_view %}
+      <p class="text-gray-400 mt-2">
+        {{ entry_username }}'s attempt
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Scores -->
+  {% if score %}
+  <div class="grid grid-cols-3 gap-3 sm:gap-4">
+    <div class="bg-gray-900/80 border border-orange-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center shadow-xl">
+      <p class="text-[10px] sm:text-xs uppercase tracking-wider text-gray-400 mb-1">Overall</p>
+      <p class="text-2xl sm:text-4xl font-extrabold text-orange-400">{{ '%.0f'|format(score.overall_score) }}%</p>
+    </div>
+    <div class="bg-gray-900/80 border border-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center shadow-xl">
+      <p class="text-[10px] sm:text-xs uppercase tracking-wider text-gray-400 mb-1">Technique</p>
+      <p class="text-2xl sm:text-4xl font-extrabold text-white">{{ '%.0f'|format(score.angle_score) }}%</p>
+    </div>
+    <div class="bg-gray-900/80 border border-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center shadow-xl">
+      <p class="text-[10px] sm:text-xs uppercase tracking-wider text-gray-400 mb-1">Posture</p>
+      <p class="text-2xl sm:text-4xl font-extrabold text-white">{{ '%.0f'|format(score.landmark_score) }}%</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if can_publish %}
+  <!-- Publish this score onto the reference's public leaderboard -->
+  <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-sm font-bold uppercase tracking-wider text-orange-400">Leaderboard</h3>
+      <p id="lbPublishMsg" class="text-sm text-gray-400 mt-1">
+        {% if on_leaderboard %}
+          Your score is on this reference's public leaderboard.
+        {% else %}
+          Publish your score so it appears on this reference's public leaderboard.
+        {% endif %}
+      </p>
+    </div>
+    <button id="btnPublishScore" type="button"
+      data-session-id="{{ session.id }}"
+      data-published="{{ '1' if on_leaderboard else '0' }}"
+      class="shrink-0 px-5 py-3 rounded-2xl font-bold uppercase tracking-wider text-sm transition
+        {% if on_leaderboard %}bg-gray-800 border border-gray-700 hover:border-red-500 hover:text-red-400 text-gray-300
+        {% else %}bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/30{% endif %}">
+      {% if on_leaderboard %}Remove from Leaderboard{% else %}Publish to Leaderboard{% endif %}
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Video with skeleton toggle -->
+  <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-orange-400">Your Recording</h3>
+      {% if skeleton_name %}
+        <button id="btnToggleSkeleton"
+          class="bg-gray-800 border border-gray-700 hover:border-orange-500 hover:text-orange-400 transition px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+          Skeleton: Off
+        </button>
+      {% endif %}
+    </div>
+    <video id="resultVideo" controls preload="metadata"
+           class="w-full rounded-2xl border border-gray-700 bg-black"
+           data-raw="{{ url_for('main.serve_raw', filename=raw_name) if raw_name else '' }}"
+           data-skeleton="{{ url_for('main.serve_skeleton', filename=skeleton_name) if skeleton_name else '' }}"
+           src="{{ url_for('main.serve_raw', filename=raw_name) if raw_name else '' }}"></video>
+  </div>
+
+  {% if ai %}
+  <!-- AI coaching report (collapsible blocks) -->
+  <div class="space-y-4">
+    <div class="text-center">
+      <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">AI Coach</p>
+      <h2 class="text-2xl sm:text-3xl font-extrabold uppercase tracking-wide text-white">{{ ai.exercise }}</h2>
+    </div>
+
+    {% set blocks = [
+      ('Major Errors', ai.major_errors, 'No major errors — nice work.'),
+      ('Tips to Improve', ai.tips, 'No tips right now.'),
+      ('Supporting Exercises', ai.supporting_exercises, 'No supporting exercises suggested.')
+    ] %}
+    {% for title, items, empty in blocks %}
+      <details {% if loop.first %}open{% endif %}
+        class="bg-gray-900/80 border border-gray-800 rounded-2xl shadow-xl overflow-hidden">
+        <summary class="cursor-pointer flex items-center justify-between p-5 text-sm font-bold uppercase tracking-wider text-orange-400">
+          <span>{{ title }}</span>
+          <span class="chev text-gray-500">&#9662;</span>
+        </summary>
+        <div class="px-5 pb-5">
+          {% if items %}
+            <ul class="list-disc list-inside space-y-2 text-gray-300 text-sm">
+              {% for item in items %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-400 text-sm">{{ empty }}</p>
+          {% endif %}
+        </div>
+      </details>
+    {% endfor %}
+
+    {% if ai.quote %}
+      <p class="text-center italic text-orange-300/90 pt-2">“{{ ai.quote }}”</p>
+    {% endif %}
+  </div>
+  {% elif feedback %}
+  <!-- Per-joint feedback (fallback when AI coaching is unavailable) -->
+  <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-6 shadow-xl">
+    <h3 class="text-sm font-bold uppercase tracking-wider text-orange-400 mb-4">Per-Joint Feedback</h3>
+    <div class="space-y-3">
+      {% for f in feedback %}
+        <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 border-b border-gray-800 pb-3 last:border-0">
+          <div class="sm:w-32 sm:shrink-0">
+            <p class="font-bold text-white text-sm">{{ f.joint_name }}</p>
+            <p class="text-xs text-gray-500">{{ '%.1f'|format(f.error_deg) }}° avg error</p>
+          </div>
+          <p class="text-sm text-gray-300">{{ f.tip }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="text-center">
+    <a href="{{ back_url or url_for('main.dashboard') }}"
+       class="inline-block bg-gray-800 border border-gray-700 hover:border-orange-500 hover:text-orange-400 transition px-7 py-3 rounded-2xl font-bold uppercase tracking-wider text-sm">
+      {% if leaderboard_view %}Back to Gallery{% else %}Back to Dashboard{% endif %}
+    </a>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/result.js') }}"></script>
+<script>
+(function () {
+  var btn = document.getElementById('btnPublishScore');
+  if (!btn) return;
+  var msg = document.getElementById('lbPublishMsg');
+
+  function setPublished(published) {
+    btn.dataset.published = published ? '1' : '0';
+    btn.textContent = published ? 'Remove from Leaderboard' : 'Publish to Leaderboard';
+    btn.className = 'shrink-0 px-5 py-3 rounded-2xl font-bold uppercase tracking-wider text-sm transition ' +
+      (published
+        ? 'bg-gray-800 border border-gray-700 hover:border-red-500 hover:text-red-400 text-gray-300'
+        : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/30');
+    if (msg) {
+      msg.textContent = published
+        ? "Your score is on this reference's public leaderboard."
+        : "Publish your score so it appears on this reference's public leaderboard.";
+    }
+  }
+
+  btn.addEventListener('click', async function () {
+    var published = btn.dataset.published === '1';
+    var sid = btn.dataset.sessionId;
+    var action = published ? 'unpublish_score' : 'publish_score';
+    btn.disabled = true;
+    try {
+      var res = await fetch('/session/' + sid + '/' + action, { method: 'POST' });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      setPublished(!!data.published);
+    } catch (err) {
+      if (msg) msg.textContent = 'Error: ' + err.message;
+      if (window.showAppError) window.showAppError(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+{% endblock %}

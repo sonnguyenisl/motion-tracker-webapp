@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Login — Aximove{% endblock %}
+
+{% block content %}
+<section class="flex items-center justify-center px-4 py-16">
+  <form action="{{ url_for('main.login') }}" method="post"
+        class="bg-gray-900/80 backdrop-blur border border-gray-800 p-7 sm:p-10 rounded-3xl shadow-2xl w-full max-w-sm">
+
+    <div class="text-center mb-8">
+      <h1 class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-3">Aximove</h1>
+      <h2 class="text-3xl font-extrabold uppercase tracking-wide text-white">Welcome Back</h2>
+      <p class="text-gray-500 text-sm mt-2">Train hard. Move better.</p>
+    </div>
+
+    {% if message %}
+      <div class="p-3 mb-4 rounded-xl text-sm text-center font-semibold
+                  {% if message_type == 'success' %}bg-green-500/10 border border-green-500/40 text-green-400
+                  {% else %}bg-red-500/10 border border-red-500/40 text-red-400{% endif %}">
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <input type="text" name="username" placeholder="Username" required
+      class="w-full p-3 mb-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+
+    <input type="password" name="password" placeholder="Password" required
+      class="w-full p-3 mb-6 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+
+    <button type="submit"
+      class="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition p-3 rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-orange-500/30">
+      Sign In
+    </button>
+
+    <p class="text-center text-sm text-gray-500 mt-5">
+      No account? <a href="{{ url_for('main.signup') }}" class="text-orange-400 hover:underline">Sign up</a>
+    </p>
+  </form>
+</section>
+{% endblock %}

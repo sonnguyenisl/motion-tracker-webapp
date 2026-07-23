@@ -1,0 +1,28 @@
+# Minimum versions. These lower bounds match working builds on Python 3.14
+# (which has prebuilt wheels for all of these); using >= avoids forcing pip to
+# downgrade or compile older releases (e.g. Pillow 10.x has no 3.14 wheel and
+# fails to build from source on Windows).
+
+# --- Web ---
+Flask>=3.1.0
+Flask-SocketIO>=5.6.0
+python-socketio>=5.16.0
+python-engineio>=4.13.0
+Werkzeug>=3.1.0
+Pillow>=11.0.0
+gunicorn>=23.0.0
+
+# --- Motion / ML pipeline ---
+# Uses the MediaPipe Tasks API (PoseLandmarker), not the legacy mp.solutions.
+mediapipe>=0.10.14
+opencv-python-headless>=4.10.0
+numpy>=1.26.0
+tslearn>=0.6.3
+scikit-learn>=1.5.0
+scipy>=1.13.0
+
+# --- LLM coaching (OpenRouter via the OpenAI SDK) ---
+# Requires the OPENROUTER_API_KEY environment variable at runtime (loaded from
+# a local .env file via python-dotenv — see config.py).
+openai>=1.40.0
+python-dotenv>=1.0.0

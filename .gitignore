@@ -1,0 +1,28 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Secrets ---
+.env
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Auto-downloaded MediaPipe model (re-fetched on first run) ---
+motion_ml/models/
+
+# --- Runtime data ---
+# These are generated per-machine. Paths in the DB are stored by name (not
+# absolute), so the app is portable even if you DO commit them — but committing
+# a binary SQLite DB tends to cause merge conflicts. Uncomment to keep each
+# machine's data local instead:
+# app.db
+# uploads/
+# recordings/

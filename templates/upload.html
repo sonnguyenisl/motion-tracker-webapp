@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Upload Reference — Aximove{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-12">
+  <div class="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-3xl shadow-2xl p-8">
+
+    <div class="text-center mb-8">
+      <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">Upload</p>
+      <h2 class="text-3xl font-extrabold uppercase tracking-wide text-white">Reference Movement</h2>
+      <p class="text-gray-400 mt-2">Upload a video or image of the correct form. We analyse its pose so we can score you against it.</p>
+    </div>
+
+    <form action="{{ url_for('main.upload') }}" method="post" enctype="multipart/form-data" class="space-y-6">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-5">
+        <label class="block text-sm font-bold uppercase tracking-wider text-orange-400 mb-3">Exercise Name</label>
+        <input type="text" name="label" required maxlength="100"
+          placeholder="e.g. Golf driving form"
+          class="block w-full p-3 rounded-xl bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <p class="text-xs text-gray-500 mt-2">Name the movement so you can tell what this reference is for.</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-5">
+        <label class="block text-sm font-bold uppercase tracking-wider text-orange-400 mb-3">Choose Reference (video or image)</label>
+        <input type="file" name="reference" accept="video/*,image/*" required
+          class="block w-full text-sm text-gray-300
+                 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0
+                 file:bg-orange-500 file:text-white file:font-bold file:uppercase file:tracking-wider
+                 hover:file:bg-orange-600 cursor-pointer" />
+        <p class="text-xs text-gray-500 mt-2">Videos must be {{ config.MAX_VIDEO_SECONDS }} seconds or less — longer clips can be trimmed below before uploading.</p>
+      </div>
+
+      <!-- Publish to gallery -->
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-5">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" name="publish_to_gallery" value="1"
+            class="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-900 text-orange-500 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer">
+          <div>
+            <span class="text-sm font-bold uppercase tracking-wider text-orange-400">Publish to Gallery</span>
+            <p class="text-xs text-gray-500 mt-1">Share this reference with the community. Other users will be able to score themselves against it.</p>
+          </div>
+        </label>
+        <div id="galleryDescWrap" class="hidden mt-4">
+          <label class="block text-sm font-bold uppercase tracking-wider text-orange-400 mb-2">Description</label>
+          <textarea name="gallery_description" rows="3" maxlength="500"
+            placeholder="Describe the movement — what to focus on, common mistakes, tips for good form…"
+            class="block w-full p-3 rounded-xl bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+          <p class="text-xs text-gray-500 mt-2">Help others understand what good form looks like for this exercise.</p>
+        </div>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition text-white font-bold uppercase tracking-wider py-3 rounded-2xl shadow-lg shadow-orange-500/30">
+        Upload & Analyse
+      </button>
+    </form>
+
+    {% if result %}
+      <div class="mt-8 space-y-4">
+        <div class="rounded-2xl p-5 border
+                    {% if result_type == 'success' %}bg-green-500/10 border-green-500/40 text-green-300
+                    {% else %}bg-red-500/10 border-red-500/40 text-red-300{% endif %}">
+          <p class="font-semibold">{{ result }}</p>
+        </div>
+
+        {% if filename and result_type == 'success' %}
+          <div class="bg-gray-800 border border-gray-700 rounded-2xl p-5">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-orange-400 mb-3">Your Reference{% if label %}: {{ label }}{% endif %}</h3>
+            {% if kind == 'video' %}
+              <video controls preload="metadata" class="w-full rounded-xl border border-gray-700 bg-black mb-3"
+                     src="{{ url_for('main.serve_upload', filename=filename) }}"></video>
+            {% else %}
+              <img class="w-full rounded-xl border border-gray-700 bg-black mb-3"
+                   src="{{ url_for('main.serve_upload', filename=filename) }}" alt="reference">
+            {% endif %}
+            <a href="{{ url_for('main.camera') }}"
+               class="inline-block bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-6 py-2 rounded-xl font-bold uppercase tracking-wider text-sm">
+              Record Against This &rarr;
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/trimmer.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var cb = document.querySelector('input[name="publish_to_gallery"]');
+    var wrap = document.getElementById('galleryDescWrap');
+    if (cb && wrap) {
+      cb.addEventListener('change', function () {
+        wrap.classList.toggle('hidden', !cb.checked);
+      });
+    }
+
+    // ---- Video Trimmer ----
+    var fileInput = document.querySelector('input[name="reference"]');
+    var form = document.querySelector('form');
+    var previewWrap = document.createElement('div');
+    previewWrap.className = 'mt-4 hidden';
+    previewWrap.id = 'trimPreviewWrap';
+    var previewVideo = document.createElement('video');
+    previewVideo.controls = true;
+    previewVideo.preload = 'metadata';
+    previewVideo.className = 'w-full rounded-xl border border-gray-700 bg-black';
+    previewWrap.appendChild(previewVideo);
+    form.insertBefore(previewWrap, form.querySelector('button[type="submit"]'));
+
+    var trimmer = null;
+    var trimStartInput = document.createElement('input');
+    trimStartInput.type = 'hidden';
+    trimStartInput.name = 'trim_start';
+    trimStartInput.value = '0';
+    var trimEndInput = document.createElement('input');
+    trimEndInput.type = 'hidden';
+    trimEndInput.name = 'trim_end';
+    trimEndInput.value = '0';
+    form.appendChild(trimStartInput);
+    form.appendChild(trimEndInput);
+
+    form.addEventListener('submit', function () {
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Uploading... Please wait...';
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    });
+
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files[0];
+      if (!file || !file.type.startsWith('video/')) {
+        previewWrap.classList.add('hidden');
+        if (trimmer) { trimmer.destroy(); trimmer = null; }
+        return;
+      }
+
+      var url = URL.createObjectURL(file);
+      previewVideo.src = url;
+      previewWrap.classList.remove('hidden');
+
+      previewVideo.addEventListener('loadedmetadata', function checkDuration() {
+        previewVideo.removeEventListener('loadedmetadata', checkDuration);
+        var maxSecs = Number("{{ config.MAX_VIDEO_SECONDS }}") || 60;
+        if (previewVideo.duration > maxSecs + 0.5) {
+          // Video too long — reject it
+          URL.revokeObjectURL(url);
+          previewWrap.classList.add('hidden');
+          previewVideo.src = '';
+          fileInput.value = '';
+          if (trimmer) { trimmer.destroy(); trimmer = null; }
+          if (window.showAppError) {
+            window.showAppError('Video exceeds the ' + maxSecs + '-second limit. Please choose a shorter clip.');
+          }
+          return;
+        }
+        if (trimmer) trimmer.destroy();
+        trimmer = new VideoTrimmer(previewVideo, {
+          maxDuration: maxSecs,
+          onTrimChange: function (start, end) {
+            trimStartInput.value = start;
+            trimEndInput.value = end;
+          }
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

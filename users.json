@@ -1,0 +1,7 @@
+{
+  "sonngu": {
+    "password": "scrypt:32768:8:1$0e67wxHJlfROGN79$5162c5b74ad688ae767c9f046eb3c049496ae347534193d0f56c4bf54b75bf94d6e6f95121e31b793ad4d88fa65eb489f7557ebec988e69cab44c43bf93f44c8",
+    "contact": "123",
+    "videos": []
+  }
+}

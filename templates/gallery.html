@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+{% block title %}Gallery — Aximove{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-12">
+
+  <div class="text-center mb-10">
+    <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">Community</p>
+    <h1 class="text-3xl sm:text-4xl font-extrabold uppercase tracking-wide">Exercise Gallery</h1>
+    <p class="text-gray-400 mt-2 max-w-xl mx-auto">
+      Browse reference movements shared by the community. Find a reference to score yourself against.
+    </p>
+  </div>
+
+  <!-- Search -->
+  <form method="get" action="{{ url_for('main.gallery') }}" class="max-w-lg mx-auto mb-8">
+    <div class="flex gap-2">
+      <input type="text" name="q" value="{{ q }}"
+        placeholder="Search exercises…"
+        class="flex-1 p-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+      <button type="submit"
+        class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-sm">
+        Search
+      </button>
+    </div>
+  </form>
+
+  {% if items %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for item in items %}
+        <div data-item-id="{{ item.id }}"
+          class="gallery-card cursor-pointer bg-gray-900/80 border border-gray-800 rounded-3xl overflow-hidden shadow-xl hover:border-orange-500/50 transition group">
+          <!-- Video preview — click anywhere on the card to open it big -->
+          <div class="relative">
+            <video preload="metadata" muted class="w-full aspect-video bg-black object-cover pointer-events-none"
+                   src="{{ url_for('main.serve_upload_public', filename=item.filename) }}#t=0.1"></video>
+            <div class="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/40 transition">
+              <span class="flex items-center justify-center w-14 h-14 rounded-full bg-orange-500/90 shadow-lg group-hover:scale-110 transition">
+                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Info block -->
+          <div class="p-5 space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="font-bold text-white text-lg truncate">{{ item.label or item.original_name }}</h3>
+                <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                  By <span class="text-orange-400 font-semibold">{{ item.username }}</span>
+                  &middot; {{ item.created_at[:10] }}
+                </p>
+              </div>
+              <!-- Net rating badge -->
+              <div class="net-badge shrink-0 flex items-center gap-1 text-sm font-bold
+                {% if item.net_rating > 0 %}text-green-400
+                {% elif item.net_rating < 0 %}text-red-400
+                {% else %}text-gray-400{% endif %}">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 15l-5-5h10l-5 5z"/>
+                </svg>
+                <span class="net-count">{{ item.net_rating }}</span>
+              </div>
+            </div>
+
+            <!-- Vote buttons -->
+            <div class="flex items-center flex-wrap gap-2 pt-1">
+              <button type="button" data-item-id="{{ item.id }}" data-vote="1"
+                class="vote-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold uppercase tracking-wider transition
+                  {% if user_votes.get(item.id) == 1 %}bg-orange-500/20 text-orange-400 border border-orange-500/50
+                  {% else %}bg-gray-800 border border-gray-700 text-gray-400 hover:text-green-400 hover:border-green-500/50{% endif %}">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23h-.777ZM2.331 10.977a11.969 11.969 0 0 0-.831 4.398 12 12 0 0 0 .52 3.507C2.28 19.732 3.105 20.25 3.994 20.25H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 0 1-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.919 1.227Z"/>
+                </svg>
+                <span class="upvote-count">{{ item.upvotes }}</span>
+              </button>
+              <button type="button" data-item-id="{{ item.id }}" data-vote="-1"
+                class="vote-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold uppercase tracking-wider transition
+                  {% if user_votes.get(item.id) == -1 %}bg-red-500/20 text-red-400 border border-red-500/50
+                  {% else %}bg-gray-800 border border-gray-700 text-gray-400 hover:text-red-400 hover:border-red-500/50{% endif %}">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15.73 5.5h1.035A7.465 7.465 0 0 1 18 9.625a7.465 7.465 0 0 1-1.235 4.125h-.148c-.806 0-1.534.446-2.031 1.08a9.04 9.04 0 0 1-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.498 4.498 0 0 0-.322 1.672V21a.75.75 0 0 1-.75.75 2.25 2.25 0 0 1-2.25-2.25c0-1.152.26-2.243.723-3.218.266-.558-.107-1.282-.725-1.282H3.622c-1.026 0-1.945-.694-2.054-1.715A12.137 12.137 0 0 1 1.5 11.25c0-2.848.992-5.464 2.649-7.521C4.537 3.247 5.136 3 5.754 3h2.518c.483 0 .964.078 1.423.23l3.114 1.04c.46.153.94.23 1.423.23h1.498ZM21.669 13.773c.536-1.362.831-2.845.831-4.398 0-1.22-.182-2.398-.52-3.507-.26-.85-1.084-1.368-1.973-1.368H19.1c-.445 0-.72.498-.523.898.591 1.2.924 2.55.924 3.977a8.958 8.958 0 0 1-1.302 4.666c-.245.403.028.959.5.959h1.053c.832 0 1.612-.453 1.918-1.227Z"/>
+                </svg>
+                <span class="downvote-count">{{ item.downvotes }}</span>
+              </button>
+
+              <button type="button" data-item-id="{{ item.id }}"
+                data-label="{{ item.label or item.original_name }}"
+                class="lb-btn ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 text-gray-400 hover:text-orange-400 hover:border-orange-500/50 transition">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M5 21V9h4v12H5Zm5 0V3h4v18h-4Zm5 0v-8h4v8h-4Z"/></svg>
+                Leaderboard
+              </button>
+              {% if username %}
+                <a href="{{ url_for('main.camera', ref_id=item.ref_id) }}"
+                  class="text-xs font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 transition">
+                  Use This &rarr;
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-12 text-center shadow-xl">
+      <p class="text-gray-400 mb-2">
+        {% if q %}
+          No gallery items match "{{ q }}".
+        {% else %}
+          No exercises in the gallery yet.
+        {% endif %}
+      </p>
+      {% if username %}
+        <p class="text-gray-500 text-sm">Upload a reference and publish it to the gallery to help the community!</p>
+        <a href="{{ url_for('main.upload') }}"
+          class="inline-block mt-5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-7 py-3 rounded-2xl font-bold uppercase tracking-wider shadow-lg shadow-orange-500/30">
+          Upload a Reference
+        </a>
+      {% else %}
+        <p class="text-gray-500 text-sm">Sign in to publish your own references and vote.</p>
+        <a href="{{ url_for('main.login') }}"
+          class="inline-block mt-5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-7 py-3 rounded-2xl font-bold uppercase tracking-wider shadow-lg shadow-orange-500/30">
+          Sign In
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- ============================ Detail modal ============================ -->
+  <div id="galleryModal"
+    class="hidden fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+    <div id="modalBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm"></div>
+
+    <div class="relative w-full max-w-3xl my-6 max-h-[calc(100vh-3rem)] overflow-y-auto bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl hide-scrollbar">
+      <!-- Close -->
+      <button id="modalClose" type="button" aria-label="Close"
+        class="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-gray-300 hover:text-white transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <video id="mVideo" controls preload="metadata" class="w-full aspect-video bg-black object-contain"></video>
+
+      <div class="p-6 space-y-5">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h2 id="mTitle" class="text-2xl font-extrabold text-white truncate"></h2>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">
+              By <span id="mAuthor" class="text-orange-400 font-semibold"></span>
+              &middot; <span id="mDate"></span>
+            </p>
+          </div>
+          <!-- Used-by count -->
+          <div class="shrink-0 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-2xl px-3 py-2">
+            <svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6Z"/>
+            </svg>
+            <span class="text-sm font-bold text-white"><span id="mUsedBy">0</span></span>
+            <span class="text-xs text-gray-400 uppercase tracking-wider">used this</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <p id="mDesc" class="text-gray-300 leading-relaxed whitespace-pre-line"></p>
+
+        <!-- Votes + Use This -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <button id="mUpBtn" type="button" data-vote="1"
+            class="m-vote-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 text-gray-400 transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23h-.777ZM2.331 10.977a11.969 11.969 0 0 0-.831 4.398 12 12 0 0 0 .52 3.507C2.28 19.732 3.105 20.25 3.994 20.25H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 0 1-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.919 1.227Z"/></svg>
+            <span id="mUpCount">0</span>
+          </button>
+          <button id="mDownBtn" type="button" data-vote="-1"
+            class="m-vote-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 text-gray-400 transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.73 5.5h1.035A7.465 7.465 0 0 1 18 9.625a7.465 7.465 0 0 1-1.235 4.125h-.148c-.806 0-1.534.446-2.031 1.08a9.04 9.04 0 0 1-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.498 4.498 0 0 0-.322 1.672V21a.75.75 0 0 1-.75.75 2.25 2.25 0 0 1-2.25-2.25c0-1.152.26-2.243.723-3.218.266-.558-.107-1.282-.725-1.282H3.622c-1.026 0-1.945-.694-2.054-1.715A12.137 12.137 0 0 1 1.5 11.25c0-2.848.992-5.464 2.649-7.521C4.537 3.247 5.136 3 5.754 3h2.518c.483 0 .964.078 1.423.23l3.114 1.04c.46.153.94.23 1.423.23h1.498ZM21.669 13.773c.536-1.362.831-2.845.831-4.398 0-1.22-.182-2.398-.52-3.507-.26-.85-1.084-1.368-1.973-1.368H19.1c-.445 0-.72.498-.523.898.591 1.2.924 2.55.924 3.977a8.958 8.958 0 0 1-1.302 4.666c-.245.403.028.959.5.959h1.053c.832 0 1.612-.453 1.918-1.227Z"/></svg>
+            <span id="mDownCount">0</span>
+          </button>
+          <button id="mLeaderboardBtn" type="button"
+            class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 text-gray-300 hover:text-orange-400 hover:border-orange-500/50 transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M5 21V9h4v12H5Zm5 0V3h4v18h-4Zm5 0v-8h4v8h-4Z"/></svg>
+            Leaderboard
+          </button>
+          {% if username %}
+            <a id="mUseThis" href="#"
+              class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-5 py-2 rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg shadow-orange-500/30">
+              Use This &rarr;
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Comments -->
+        <div class="border-t border-gray-800 pt-5">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-orange-400 mb-3">
+            Comments <span id="mCommentCount" class="text-gray-500">(0)</span>
+          </h3>
+
+          {% if username %}
+            <form id="mCommentForm" class="mb-4">
+              <textarea id="mCommentInput" rows="2" maxlength="1000"
+                placeholder="Add a comment…"
+                class="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+              <div class="flex justify-end mt-2">
+                <button type="submit"
+                  class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-5 py-2 rounded-xl font-bold uppercase tracking-wider text-xs">
+                  Post
+                </button>
+              </div>
+            </form>
+          {% else %}
+            <p class="text-sm text-gray-500 mb-4">
+              <a href="{{ url_for('main.login') }}" class="text-orange-400 hover:underline">Sign in</a> to leave a comment.
+            </p>
+          {% endif %}
+
+          <div id="mComments" class="space-y-3 max-h-72 overflow-y-auto"></div>
+          <p id="mNoComments" class="hidden text-sm text-gray-500">No comments yet — be the first!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ Leaderboard modal ============================ -->
+  <div id="leaderboardModal"
+    class="hidden fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+    <div id="lbBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm"></div>
+
+    <div class="relative w-full max-w-2xl my-6 max-h-[calc(100vh-3rem)] overflow-y-auto bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl hide-scrollbar">
+      <button id="lbClose" type="button" aria-label="Close"
+        class="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-gray-300 hover:text-white transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <div class="p-6 space-y-5">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-1">Leaderboard</p>
+          <h2 id="lbTitle" class="text-2xl font-extrabold text-white truncate"></h2>
+          <p class="text-xs text-gray-500 mt-1">Best scores recorded against this reference. Click a row to see the full report.</p>
+        </div>
+
+        <div id="lbList" class="space-y-2"></div>
+        <p id="lbEmpty" class="hidden text-sm text-gray-500 text-center py-6">
+          No published scores yet. Record against this reference and publish your result to be the first!
+        </p>
+        <p id="lbLoading" class="text-sm text-gray-500 text-center py-6">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var body = document.body;
+  var loginUrl = body.getAttribute('data-login-url');
+  var isLoggedIn = body.getAttribute('data-is-loggedin') === '1';
+
+  // ---- Shared vote styling -------------------------------------------------
+  function styleVotePair(upBtn, downBtn, userVote) {
+    [upBtn, downBtn].forEach(function (b) {
+      if (!b) return;
+      var v = parseInt(b.dataset.vote);
+      b.classList.remove(
+        'bg-orange-500/20', 'text-orange-400', 'border-orange-500/50',
+        'bg-red-500/20', 'text-red-400', 'border-red-500/50',
+        'hover:text-green-400', 'hover:border-green-500/50',
+        'hover:text-red-400', 'hover:border-red-500/50'
+      );
+      b.classList.add('bg-gray-800', 'border-gray-700', 'text-gray-400');
+      if (v === 1) b.classList.add('hover:text-green-400', 'hover:border-green-500/50');
+      else b.classList.add('hover:text-red-400', 'hover:border-red-500/50');
+    });
+    if (userVote === 1 && upBtn) {
+      upBtn.classList.remove('bg-gray-800', 'border-gray-700', 'text-gray-400',
+                             'hover:text-green-400', 'hover:border-green-500/50');
+      upBtn.classList.add('bg-orange-500/20', 'text-orange-400', 'border-orange-500/50');
+    } else if (userVote === -1 && downBtn) {
+      downBtn.classList.remove('bg-gray-800', 'border-gray-700', 'text-gray-400',
+                               'hover:text-red-400', 'hover:border-red-500/50');
+      downBtn.classList.add('bg-red-500/20', 'text-red-400', 'border-red-500/50');
+    }
+  }
+
+  // Update a card's counts + net badge after a vote anywhere.
+  function syncCard(itemId, data) {
+    var card = document.querySelector('.gallery-card[data-item-id="' + itemId + '"]');
+    if (!card) return;
+    var upBtn = card.querySelector('.vote-btn[data-vote="1"]');
+    var downBtn = card.querySelector('.vote-btn[data-vote="-1"]');
+    if (upBtn) upBtn.querySelector('.upvote-count').textContent = data.upvotes;
+    if (downBtn) downBtn.querySelector('.downvote-count').textContent = data.downvotes;
+    styleVotePair(upBtn, downBtn, data.user_vote);
+    var badge = card.querySelector('.net-badge');
+    if (badge) {
+      badge.querySelector('.net-count').textContent = data.net;
+      badge.classList.remove('text-green-400', 'text-red-400', 'text-gray-400');
+      badge.classList.add(data.net > 0 ? 'text-green-400' : data.net < 0 ? 'text-red-400' : 'text-gray-400');
+    }
+  }
+
+  async function sendVote(itemId, vote) {
+    var res = await fetch('/gallery/' + itemId + '/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vote: vote }),
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Vote failed');
+    return data;
+  }
+
+  // ---- Card vote buttons ---------------------------------------------------
+  document.querySelectorAll('.vote-btn').forEach(function (btn) {
+    btn.addEventListener('click', async function (e) {
+      e.stopPropagation();           // don't open the modal
+      if (!isLoggedIn) { window.location.href = loginUrl; return; }
+      try {
+        var data = await sendVote(this.dataset.itemId, parseInt(this.dataset.vote));
+        syncCard(this.dataset.itemId, data);
+        if (modal.dataset.itemId === this.dataset.itemId) renderModalVotes(data);
+      } catch (err) { console.error('Vote error:', err); }
+    });
+  });
+
+  // ====================== Detail modal ======================================
+  var modal = document.getElementById('galleryModal');
+  var mVideo = document.getElementById('mVideo');
+  var mUpBtn = document.getElementById('mUpBtn');
+  var mDownBtn = document.getElementById('mDownBtn');
+  var mUpCount = document.getElementById('mUpCount');
+  var mDownCount = document.getElementById('mDownCount');
+  var mComments = document.getElementById('mComments');
+  var mNoComments = document.getElementById('mNoComments');
+  var mCommentCount = document.getElementById('mCommentCount');
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function renderModalVotes(data) {
+    mUpCount.textContent = data.upvotes;
+    mDownCount.textContent = data.downvotes;
+    styleVotePair(mUpBtn, mDownBtn, data.user_vote);
+  }
+
+  function commentNode(c) {
+    var wrap = document.createElement('div');
+    wrap.className = 'bg-gray-800/60 border border-gray-800 rounded-xl p-3';
+    wrap.innerHTML =
+      '<div class="flex items-center justify-between gap-2 mb-1">' +
+        '<span class="text-sm font-bold text-orange-400">' + esc(c.username) + '</span>' +
+        '<span class="text-xs text-gray-500">' + esc((c.created_at || '').slice(0, 16)) + '</span>' +
+      '</div>' +
+      '<p class="text-sm text-gray-300 whitespace-pre-line break-words">' + esc(c.body) + '</p>';
+    return wrap;
+  }
+
+  function setCommentCount(n) { mCommentCount.textContent = '(' + n + ')'; }
+
+  function openModal(itemId) {
+    modal.dataset.itemId = itemId;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    // Reset transient state while loading.
+    mComments.innerHTML = '';
+    mNoComments.classList.add('hidden');
+    document.getElementById('mDesc').textContent = 'Loading…';
+
+    fetch('/gallery/' + itemId)
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; }); })
+      .then(function (d) {
+        mVideo.src = d.video_url;
+        document.getElementById('mTitle').textContent = d.label;
+        document.getElementById('mAuthor').textContent = d.username;
+        document.getElementById('mDate').textContent = (d.created_at || '').slice(0, 10);
+        document.getElementById('mDesc').textContent = d.description || 'No description provided.';
+        document.getElementById('mUsedBy').textContent = d.used_by;
+        var useBtn = document.getElementById('mUseThis');
+        if (useBtn) useBtn.href = d.use_url;
+        renderModalVotes(d);
+
+        setCommentCount(d.comments.length);
+        mComments.innerHTML = '';
+        if (d.comments.length === 0) {
+          mNoComments.classList.remove('hidden');
+        } else {
+          mNoComments.classList.add('hidden');
+          d.comments.forEach(function (c) { mComments.appendChild(commentNode(c)); });
+        }
+      })
+      .catch(function (err) {
+        document.getElementById('mDesc').textContent = 'Could not load: ' + err.message;
+      });
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    mVideo.pause();
+    mVideo.removeAttribute('src');
+    mVideo.load();
+    delete modal.dataset.itemId;
+  }
+
+  // Open on card click (ignore clicks on interactive children).
+  document.querySelectorAll('.gallery-card').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('.vote-btn, a')) return;
+      openModal(card.dataset.itemId);
+    });
+  });
+
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  // Modal vote buttons.
+  [mUpBtn, mDownBtn].forEach(function (btn) {
+    if (!btn) return;
+    btn.addEventListener('click', async function () {
+      if (!isLoggedIn) { window.location.href = loginUrl; return; }
+      var itemId = modal.dataset.itemId;
+      try {
+        var data = await sendVote(itemId, parseInt(this.dataset.vote));
+        renderModalVotes(data);
+        syncCard(itemId, data);
+      } catch (err) { console.error('Vote error:', err); }
+    });
+  });
+
+  // Comment form.
+  var commentForm = document.getElementById('mCommentForm');
+  if (commentForm) {
+    commentForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var input = document.getElementById('mCommentInput');
+      var bodyText = input.value.trim();
+      if (!bodyText) return;
+      var itemId = modal.dataset.itemId;
+      var btn = commentForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        var res = await fetch('/gallery/' + itemId + '/comment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: bodyText }),
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Comment failed');
+        mNoComments.classList.add('hidden');
+        mComments.insertBefore(commentNode(data), mComments.firstChild);
+        setCommentCount(mComments.children.length);
+        input.value = '';
+      } catch (err) {
+        console.error('Comment error:', err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ====================== Leaderboard modal =================================
+  var lbModal = document.getElementById('leaderboardModal');
+  var lbList = document.getElementById('lbList');
+  var lbEmpty = document.getElementById('lbEmpty');
+  var lbLoading = document.getElementById('lbLoading');
+  var lbTitle = document.getElementById('lbTitle');
+
+  var RANK_BADGE = { 1: 'text-yellow-400', 2: 'text-gray-300', 3: 'text-orange-400' };
+
+  function entryRow(e) {
+    var a = document.createElement('a');
+    a.href = e.url;
+    a.className = 'flex items-center gap-4 bg-gray-800/60 border border-gray-800 rounded-xl p-3 hover:border-orange-500/50 transition';
+    var rankColor = RANK_BADGE[e.rank] || 'text-gray-500';
+    var pct = (e.overall_score == null) ? '—' : Math.round(e.overall_score) + '%';
+    a.innerHTML =
+      '<span class="w-8 text-center text-lg font-extrabold ' + rankColor + '">' + e.rank + '</span>' +
+      '<span class="flex-1 min-w-0 truncate font-bold text-white">' + esc(e.username) +
+        (e.is_you ? ' <span class="text-xs text-orange-400 uppercase tracking-wider">(you)</span>' : '') +
+      '</span>' +
+      '<span class="shrink-0 text-lg font-extrabold text-orange-400">' + pct + '</span>';
+    return a;
+  }
+
+  function openLeaderboard(itemId, label) {
+    lbModal.classList.remove('hidden');
+    lbModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    lbTitle.textContent = label || 'Leaderboard';
+    lbList.innerHTML = '';
+    lbEmpty.classList.add('hidden');
+    lbLoading.classList.remove('hidden');
+
+    fetch('/gallery/' + itemId + '/leaderboard')
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error); return d; }); })
+      .then(function (d) {
+        lbLoading.classList.add('hidden');
+        lbList.innerHTML = '';
+        if (!d.entries.length) {
+          lbEmpty.classList.remove('hidden');
+          return;
+        }
+        d.entries.forEach(function (e) { lbList.appendChild(entryRow(e)); });
+      })
+      .catch(function (err) {
+        lbLoading.classList.add('hidden');
+        lbEmpty.classList.remove('hidden');
+        lbEmpty.textContent = 'Could not load leaderboard: ' + err.message;
+      });
+  }
+
+  function closeLeaderboard() {
+    lbModal.classList.add('hidden');
+    lbModal.classList.remove('flex');
+    // The detail modal may still be open underneath; only release scroll lock
+    // if it isn't.
+    if (modal.classList.contains('hidden')) document.body.style.overflow = '';
+  }
+
+  // Card leaderboard buttons.
+  document.querySelectorAll('.lb-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();           // don't open the detail modal
+      openLeaderboard(this.dataset.itemId, this.dataset.label);
+    });
+  });
+
+  // Leaderboard button inside the detail modal.
+  var mLeaderboardBtn = document.getElementById('mLeaderboardBtn');
+  if (mLeaderboardBtn) {
+    mLeaderboardBtn.addEventListener('click', function () {
+      openLeaderboard(modal.dataset.itemId, document.getElementById('mTitle').textContent);
+    });
+  }
+
+  document.getElementById('lbClose').addEventListener('click', closeLeaderboard);
+  document.getElementById('lbBackdrop').addEventListener('click', closeLeaderboard);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lbModal.classList.contains('hidden')) closeLeaderboard();
+  });
+})();
+</script>
+{% endblock %}

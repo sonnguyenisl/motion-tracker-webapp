@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Aximove{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-12 space-y-14">
+
+  <!-- References -->
+  <div>
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">Your Library</p>
+        <h1 class="text-3xl font-extrabold uppercase tracking-wide">Reference Movements</h1>
+      </div>
+      <a href="{{ url_for('main.upload') }}"
+         class="bg-gray-800 border border-gray-700 hover:border-orange-500 hover:text-orange-400 transition px-5 py-2 rounded-xl text-sm font-bold uppercase tracking-wider">
+        + Upload
+      </a>
+    </div>
+
+    {% if references %}
+      <div class="grid md:grid-cols-3 gap-6">
+        {% for r in references %}
+          <div class="bg-gray-900/80 border {% if r.id == active_reference_id %}border-orange-500{% else %}border-gray-800{% endif %} rounded-3xl p-5 shadow-xl">
+            {% if r.kind == 'video' %}
+              <video controls preload="metadata" class="w-full rounded-2xl border border-gray-700 bg-black mb-3"
+                     src="{{ url_for('main.serve_upload', filename=r.filename) }}"></video>
+            {% else %}
+              <img class="w-full rounded-2xl border border-gray-700 bg-black mb-3"
+                   src="{{ url_for('main.serve_upload', filename=r.filename) }}" alt="reference">
+            {% endif %}
+            <h3 class="font-bold text-white truncate">{{ r.label or r.original_name }}</h3>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">{{ r.kind }} · {{ r.created_at }}</p>
+            {% if r.id == active_reference_id %}
+              <p class="text-xs text-orange-400 font-bold uppercase tracking-wider mt-1">Active reference</p>
+            {% endif %}
+            {% if r.id in published_ref_ids %}
+              <p class="text-xs text-green-400 font-bold uppercase tracking-wider mt-1">Published in Gallery</p>
+            {% endif %}
+            <div class="flex items-center gap-4 mt-3">
+              <form action="{{ url_for('main.select_reference', ref_id=r.id) }}" method="post" class="inline">
+                <button type="submit" class="text-sm font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 transition">
+                  Record &rarr;
+                </button>
+              </form>
+              {% if r.id not in published_ref_ids and r.kind == 'video' %}
+                <button type="button" data-ref-id="{{ r.id }}"
+                  class="publish-btn text-sm font-bold uppercase tracking-wider text-green-400 hover:text-green-300 transition">
+                  Publish
+                </button>
+              {% endif %}
+              <form action="{{ url_for('main.delete_reference', ref_id=r.id) }}" method="post"
+                    onsubmit="return confirm('Delete this reference?');" class="inline">
+                <button type="submit" class="text-sm font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition">
+                  Delete &times;
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-10 text-center shadow-xl">
+        <p class="text-gray-400 mb-5">No references yet. Upload one to start scoring your movement.</p>
+        <a href="{{ url_for('main.upload') }}"
+           class="inline-block bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-7 py-3 rounded-2xl font-bold uppercase tracking-wider shadow-lg shadow-orange-500/30">
+          Upload Your First Reference
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recordings -->
+  <div>
+    <div class="mb-6">
+      <p class="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">History</p>
+      <h1 class="text-3xl font-extrabold uppercase tracking-wide">Your Recordings</h1>
+    </div>
+
+    {% if sessions %}
+      <div class="grid md:grid-cols-2 gap-6">
+        {% for s in sessions %}
+          <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-5 shadow-xl flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-white">
+                {% if s.overall_score is not none %}
+                  Score: <span class="text-orange-400">{{ '%.0f'|format(s.overall_score) }}%</span>
+                {% elif s.status == 'processing' %}
+                  <span class="text-yellow-400">Processing…</span>
+                {% elif s.status == 'error' %}
+                  <span class="text-red-400">Failed</span>
+                {% else %}
+                  <span class="text-gray-400">No score</span>
+                {% endif %}
+              </h3>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                vs {{ s.reference_name or 'deleted reference' }} · {{ s.created_at }}
+              </p>
+            </div>
+            <div class="flex items-center gap-4">
+              {% if s.status == 'done' %}
+                <a href="{{ url_for('main.result', session_id=s.id) }}"
+                   class="text-sm font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 transition">View &rarr;</a>
+              {% endif %}
+              <form action="{{ url_for('main.delete_session', session_id=s.id) }}" method="post"
+                    onsubmit="return confirm('Delete this recording?');" class="inline">
+                <button type="submit" class="text-sm font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition">&times;</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="bg-gray-900/80 border border-gray-800 rounded-3xl p-10 text-center shadow-xl">
+        <p class="text-gray-400 mb-5">No recordings yet.</p>
+        <a href="{{ url_for('main.camera') }}"
+           class="inline-block bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-7 py-3 rounded-2xl font-bold uppercase tracking-wider shadow-lg shadow-orange-500/30">
+          Record Your First Movement
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</section>
+
+<!-- Publish Modal -->
+<div id="publishModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md">
+    <h3 class="text-lg font-bold uppercase tracking-wider text-orange-400 mb-4">Publish to Gallery</h3>
+    <form id="publishForm" method="post" class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">Description</label>
+        <textarea name="description" rows="4" maxlength="500" required
+          placeholder="Describe the movement — what to focus on, common mistakes, tips for good form…"
+          class="block w-full p-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+        <p class="text-xs text-gray-500 mt-2">Help others understand what good form looks like for this exercise.</p>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit"
+          class="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition py-3 rounded-xl font-bold uppercase tracking-wider text-sm">
+          Publish
+        </button>
+        <button type="button" onclick="closePublishModal()"
+          class="flex-1 bg-gray-800 border border-gray-700 hover:border-gray-500 transition py-3 rounded-xl font-bold uppercase tracking-wider text-sm text-gray-300">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var modal = document.getElementById('publishModal');
+    var form = document.getElementById('publishForm');
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.publish-btn');
+      if (btn) {
+        var refId = btn.getAttribute('data-ref-id');
+        form.action = '/reference/' + refId + '/publish';
+        modal.classList.remove('hidden');
+      }
+    });
+
+    window.closePublishModal = function () {
+      modal.classList.add('hidden');
+    };
+  })();
+</script>
+{% endblock %}

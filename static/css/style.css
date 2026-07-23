@@ -1,0 +1,30 @@
+/* Aximove — small supplements on top of Tailwind (loaded via CDN). */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mirror the webcam preview + overlay so it feels like a mirror. */
+#preview,
+#overlay {
+  transform: scaleX(-1);
+}
+
+/* Range/utility tweaks could go here as the app grows. */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and old Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}

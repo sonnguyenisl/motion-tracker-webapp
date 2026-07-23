@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Aximove{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head %}{% endblock %}
+
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon">
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white min-h-screen"
+      data-login-url="{{ url_for('main.login') }}" data-is-loggedin="{{ '1' if username else '0' }}">
+
+  <nav class="px-5 sm:px-8 py-4 sm:py-5 border-b border-gray-800">
+    <div class="flex items-center justify-between">
+      <a href="{{ url_for('main.index') }}" class="text-xs font-black uppercase tracking-[0.3em] text-orange-500">Aximove</a>
+
+      <!-- Desktop / tablet links -->
+      <div class="hidden md:flex gap-5 text-sm items-center">
+        <a href="{{ url_for('main.gallery') }}" class="text-gray-300 hover:text-orange-400 transition">Gallery</a>
+        {% if username %}
+          <a href="{{ url_for('main.camera') }}" class="text-gray-300 hover:text-orange-400 transition">Record</a>
+          <a href="{{ url_for('main.upload') }}" class="text-gray-300 hover:text-orange-400 transition">Upload</a>
+          <a href="{{ url_for('main.dashboard') }}" class="text-gray-300 hover:text-orange-400 transition">Dashboard</a>
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSc402yvUYetjreczSxLgBRxRQu8neEiNahRHxEIG0fqUgE-Cw/viewform?usp=sharing&ouid=100943117044028795216" class="text-gray-300 hover:text-orange-400 transition" target="_blank">Send Feedback</a>
+          <div class="relative" id="userMenu">
+            <button type="button" id="userMenuBtn"
+              class="flex items-center gap-1.5 text-gray-300 hover:text-orange-400 transition">
+              <span class="text-orange-400 font-bold">{{ username }}</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div id="userMenuDropdown"
+              class="hidden absolute right-0 mt-2 w-44 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
+              <a href="{{ url_for('main.dashboard') }}" class="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Dashboard</a>
+              <a href="{{ url_for('main.logout') }}" class="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition border-t border-gray-800">Logout</a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('main.login') }}" class="text-gray-300 hover:text-orange-400 transition">Login</a>
+          <a href="{{ url_for('main.signup') }}" class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-xs">Sign Up</a>
+        {% endif %}
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button type="button" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false"
+        class="md:hidden text-gray-300 hover:text-orange-400 transition p-1 -mr-1">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile menu panel -->
+    <div id="mobileMenu" class="hidden md:hidden mt-4 flex flex-col gap-1 text-sm border-t border-gray-800 pt-3">
+      <a href="{{ url_for('main.gallery') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Gallery</a>
+      {% if username %}
+        <span class="px-2 py-2 text-orange-400 font-bold">{{ username }}</span>
+        <a href="{{ url_for('main.camera') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Record</a>
+        <a href="{{ url_for('main.upload') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Upload</a>
+        <a href="{{ url_for('main.dashboard') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Dashboard</a>
+        <a href="{{ url_for('main.logout') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition border-t border-gray-800 mt-1">Logout</a>
+      {% else %}
+        <a href="{{ url_for('main.login') }}" class="px-2 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-orange-400 transition">Login</a>
+        <a href="{{ url_for('main.signup') }}" class="mt-1 text-center bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-4 py-3 rounded-xl font-bold uppercase tracking-wider text-xs">Sign Up</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <script>
+    (function () {
+      // Mobile hamburger toggle
+      const mBtn = document.getElementById('mobileMenuBtn');
+      const mMenu = document.getElementById('mobileMenu');
+      if (mBtn) {
+        mBtn.addEventListener('click', () => {
+          const open = mMenu.classList.toggle('hidden') === false;
+          mBtn.setAttribute('aria-expanded', String(open));
+        });
+      }
+      // Desktop user dropdown
+      const btn = document.getElementById('userMenuBtn');
+      if (btn) {
+        const dd = document.getElementById('userMenuDropdown');
+        const menu = document.getElementById('userMenu');
+        btn.addEventListener('click', (e) => { e.stopPropagation(); dd.classList.toggle('hidden'); });
+        document.addEventListener('click', (e) => { if (!menu.contains(e.target)) dd.classList.add('hidden'); });
+      }
+    })();
+  </script>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-gray-800 py-6 px-5 sm:px-8 text-center text-xs text-gray-500 uppercase tracking-widest mt-12">
+    Aximove &mdash; Built for Athletes
+  </footer>
+
+  <!-- Global error popup (shown on any runtime/app error) -->
+  <div id="appErrorModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-error-dismiss></div>
+    <div role="alertdialog" aria-modal="true" aria-labelledby="appErrorTitle"
+         class="relative w-full max-w-md bg-gray-900 border border-red-500/40 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-800 bg-red-500/10">
+        <span class="flex items-center justify-center w-9 h-9 rounded-full bg-red-500/20 text-red-400 text-xl font-black">!</span>
+        <h2 id="appErrorTitle" class="text-sm font-bold uppercase tracking-wider text-red-400">Something went wrong</h2>
+      </div>
+      <div class="px-5 py-5">
+        <p id="appErrorMsg" class="text-sm text-gray-300 break-words"></p>
+      </div>
+      <div class="px-5 pb-5 flex justify-end">
+        <button type="button" data-error-dismiss
+          class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var modal = document.getElementById('appErrorModal');
+      var msgEl = document.getElementById('appErrorMsg');
+      if (!modal || !msgEl) return;
+
+      function hide() { modal.classList.add('hidden'); }
+      function show(message) {
+        msgEl.textContent = (message && String(message).trim()) || 'An unexpected error occurred.';
+        modal.classList.remove('hidden');
+      }
+      // Exposed so any page script can trigger the popup: window.showAppError(msg)
+      window.showAppError = show;
+
+      modal.querySelectorAll('[data-error-dismiss]').forEach(function (el) {
+        el.addEventListener('click', hide);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) hide();
+      });
+
+      // Uncaught runtime exceptions (ignore resource load errors — no message).
+      window.addEventListener('error', function (e) {
+        if (!e || (!e.message && !e.error)) return;
+        show(e.message || 'An unexpected error occurred.');
+      });
+      // Rejected promises that nothing caught.
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e && e.reason;
+        show((r && (r.message || String(r))) || 'An unexpected error occurred.');
+      });
+      // App-level errors, e.g. scoring failures emitted over SocketIO.
+      window.addEventListener('ft:error', function (e) {
+        show((e && e.detail && e.detail.message) || 'An error occurred while processing.');
+      });
+    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
