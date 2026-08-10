@@ -17,7 +17,7 @@ from openai import OpenAI
 from .similarity import format_feedback
 
 BASE_URL = "https://openrouter.ai/api/v1"
-MODEL = os.environ.get("OPENROUTER_MODEL", "tencent/hy3:free")
+MODEL = os.environ.get("OPENROUTER_MODEL", "inclusionai/ling-3.0-tiny:free")
 
 # Reusable OpenAI client (created once, used across sessions)
 _CLIENT = None
