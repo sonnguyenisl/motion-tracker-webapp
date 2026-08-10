@@ -17,7 +17,7 @@ from openai import OpenAI
 from .similarity import format_feedback
 
 BASE_URL = "https://openrouter.ai/api/v1"
-MODEL = os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
+MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
 
 # Reusable OpenAI client (created once, used across sessions)
 _CLIENT = None
