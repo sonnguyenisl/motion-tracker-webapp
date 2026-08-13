@@ -4,6 +4,9 @@
 
 AXIMOVE is a web application that uses **computer vision** and **movement analysis** to help users evaluate their exercise technique. Users can upload a reference movement and their own movement, compare the two, and receive feedback based on their performance.
 
+## Official Website
+
+[**AXIMOVE Official Website**](https://aximoveofficial.up.railway.app/)
 ---
 
 ## Overview
@@ -186,5 +189,3 @@ Potential improvements include:
 ## Repository
 
 [**AXIMOVE GitHub Repository**](https://github.com/sonnguyenisl/motion-tracker-webapp)
-
-[**AXIMOVE Official Website**](https://aximoveofficial.up.railway.app/)
